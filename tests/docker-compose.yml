@@ -1,0 +1,8 @@
+services:
+  random_messages:
+    container_name: random_messages
+    image: random_messages:latest
+    tty: true
+    environment:
+      - SLEEP_TIME=1
+      - LOOP_LIMIT=0

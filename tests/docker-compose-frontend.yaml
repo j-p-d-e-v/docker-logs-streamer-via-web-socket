@@ -1,0 +1,8 @@
+services:
+  nginx:
+    image: node
+    tty: true
+    volumes:
+      - ./client:/app
+    ports:
+      - 7050:80
