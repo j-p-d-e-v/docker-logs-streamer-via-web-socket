@@ -36,7 +36,7 @@
   padding:10px;
   border:1px solid #FFF;
   height:250px;
-  max-width:300px;
+  width:100%;
   overflow:auto;
   background-color:#000;
   color:#FFF;
