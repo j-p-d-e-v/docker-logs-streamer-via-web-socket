@@ -17,6 +17,10 @@
         <label>Timeout</label>
         <input type="number" v-model="timeout" />
       </div>
+      <div class="form-input">
+        <label>Stream Key</label>
+        <input type="text" v-model="stream_key" />
+      </div>
       <div>
         <br/>
         <button v-if="!connected" @click="onConnectWS">Submit</button>
@@ -57,8 +61,10 @@ export default{
         "container_name="+this.container_name,
         "session_id="+this.session_id,
         "timeout="+this.timeout,
+        "stream_key="+this.stream_key,
       ].join("&");
       let url = `${base_url}?${params}`;
+      console.log(url);
       this.ws = new WebSocket(url);
       this.ws.onopen = (e) => {
         console.info("Websocket Connection Established",e);
@@ -92,6 +98,7 @@ export default{
       container_name: "1576052f73f8",
       session_id: "session-1576052f73f8",
       timeout:30,
+      stream_key: "thisisastreamkeyfortesting",
       data:[],
       connected:false,
       ws:null
