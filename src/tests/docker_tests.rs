@@ -1,34 +1,30 @@
-/*
-
-Docker Log Testing
-1. Prepare a docker image that I can use to stream logs. (limited)
-2. Execute docker_logs assert if there are output.
-3. If there are output, it should pass.
-*/
-
-use futures_util::StreamExt;
 
 #[tokio::test]
 async fn test_docker_logs(){
     use crate::docker_logs;
+    use crate::Logger;
+    use futures_util::StreamExt;
     use bollard::{
         Docker,
         container::{
             RemoveContainerOptions,
             CreateContainerOptions, 
             Config,
+            LogsOptions, 
+            LogOutput
         },
     };
+    let mut logger: Logger = Logger::new("test-docker-logs.log".to_string());
     let docker = Docker::connect_with_local_defaults().unwrap();
     match docker.create_container(Some(CreateContainerOptions{
         name:"test-random-messages".to_string(),
         platform: None
     }),Config {
         hostname: Some("test-random-messages".to_string()),
-        tty: Some(true),
+        tty: Some(false),
         env: Some(vec![            
-            "SLEEP_TIME=1".to_string(),
-            "LOOP_LIMIT=5".to_string(),
+            "SLEEP_TIME=0.01".to_string(),
+            "LOOP_LIMIT=9999".to_string(),
         ]),
         image: Some("random_messages:latest".to_string()),
         ..Default::default()
@@ -41,16 +37,20 @@ async fn test_docker_logs(){
                     println!("Container ID: {}",container_id);
                     let mut logs = docker_logs(container_id.clone()).await;
                     
-                    while let Some(log_output) = logs.next().await {
-                        match log_output {
-                            Ok(_) =>{
-                                assert!(true);
-                                break
-                            }
-                            Err(error) => {                    
-                                eprintln!("docker logs output error: {}",error);
+                    while let Some(log_result) = logs.next().await {
+                        match log_result {
+                            Ok(log_output) => {
+                                match log_output {
+                                    LogOutput::Console { message } =>{
+                                        logger.write(&message);
+                                    }
+                                    _ => continue
+                                };
+                            },
+                            Err(error) => {
+                                eprintln!("{:?}",error);
                                 assert!(false);
-                                break
+                                break;
                             }
                         }
                     }

@@ -62,6 +62,7 @@ export default{
         "session_id="+this.session_id,
         "timeout="+this.timeout,
         "stream_key="+this.stream_key,
+        "save_logs="+this.save_logs
       ].join("&");
       let url = `${base_url}?${params}`;
       console.log(url);
@@ -97,6 +98,7 @@ export default{
       message:"Hello Tiktok",
       container_name: "1576052f73f8",
       session_id: "session-1576052f73f8",
+      save_logs: true,
       timeout:30,
       stream_key: "thisisastreamkeyfortesting",
       data:[],

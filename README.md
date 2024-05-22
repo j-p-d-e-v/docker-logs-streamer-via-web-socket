@@ -5,7 +5,6 @@ Stream docker logs using Websocket to your browser.
 Todo:
 - [ ] Until Time to target specific line Parameter.
 - [ ] Unit Testing.
-- [ ] Save to File (Should I include encrypt?).
 - [ ] File List endpoint to download files.
 - [ ] Improve UI
 - [ ] Download Log File

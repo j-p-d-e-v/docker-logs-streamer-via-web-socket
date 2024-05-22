@@ -7,6 +7,9 @@ use std::{
     default::Default,
 };
 use serde::{Deserialize, Serialize};
+use std::path::Path;
+use std::fs;
+use std::io::{BufWriter, Write, Error};
 pub mod tests;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -15,6 +18,8 @@ pub struct WatchQueryParams {
     pub session_id: String,
     pub timeout: u64,
     pub stream_key: String,
+    #[serde(default)]
+    pub save_logs: bool
 }
 
 async fn docker_logs(container_name: String) ->  impl Stream<Item = Result<LogOutput, bollard::errors::Error>> {
@@ -31,7 +36,7 @@ async fn docker_logs(container_name: String) ->  impl Stream<Item = Result<LogOu
     )
 }
 
-pub async fn send_message(socket: WebSocket, container_name: String, session_id: String, client_stream_key: String, config_stream_key: String, timeout: u64) { 
+pub async fn send_message(socket: WebSocket, container_name: String, session_id: String, client_stream_key: String, config_stream_key: String, timeout: u64, save_logs: bool, logs_base_dir: String) { 
     let (mut tx, mut rx) = socket.split();
 
     println!("Websocket Connected");
@@ -51,11 +56,24 @@ pub async fn send_message(socket: WebSocket, container_name: String, session_id:
         } else {
             timeout
         };
+        let log_file_path: String = format!("{}/{}.log",logs_base_dir,&session_id);
+        let mut logger: Logger = Logger::new(log_file_path); 
         while let Some(log_result) = logs.next().await { 
             match log_result {
                 Ok(log_output) => { 
                     match log_output {
                         LogOutput::Console { message } =>{
+                            if save_logs {
+                                if let Err(error) = logger.write(&message) {                                                                                                    
+                                    let error_message = format!("Unable to write logs to {}.log. Error: {}",&session_id, error);
+                                    eprint!("{}",error_message);
+                                    if let Err(error) = tx.send(Message::text(error_message)).await {
+                                        eprintln!("Unable to send error message to client.Error: {}",error);
+                                    }
+                                    break
+
+                                }
+                            }
                             let message = String::from_utf8_lossy(&message);
                             match tx.send(Message::text(message)).await {
                                 Ok(_) => {
@@ -93,4 +111,38 @@ pub async fn send_message(socket: WebSocket, container_name: String, session_id:
             eprintln!("Unable to close socket of session {} with container {}. Error: {:?}",session_id,container_name,error);
         }
     };
+}
+
+
+
+pub struct Logger {
+    pub file_handler: BufWriter<fs::File>
+}
+
+impl Logger {
+    pub fn new(file_path: String) -> Self {
+        let path: &Path = Path::new(&file_path);
+        match fs::OpenOptions::new().create(true).append(true).open(path) {
+            Ok(file) => {
+                Self {
+                    file_handler: BufWriter::new(file)
+                }   
+            }
+            Err(error) => {
+                panic!("Unable to create file handler for {}. Error: {:?}",file_path,error);
+            }
+        }
+    }
+    pub fn write(&mut self, data: &[u8] ) -> Result<bool,Error> {
+        let f = &mut self.file_handler;
+        if let Err(error) = f.write(data) {
+            Err(error)
+        }
+        else{
+            match f.flush() {
+                Ok(_) => Ok(true),
+                Err(error) => Err(error)
+            }
+        }
+    }
 }
