@@ -1,5 +1,5 @@
 use warp::Filter;
-use docker_container_log_streamer::{WatchQueryParams, send_message};
+use docker_container_log_streamer::{WatchQueryParams, send_message, Logger};
 use clap::Parser;
 use std::net::Ipv4Addr;
 
@@ -17,10 +17,6 @@ struct Args {
     /// The port number to use.
     #[arg(long)]
     port: u16,
-    
-    /// The base directory where the logs will be stored.
-    #[arg(long)]
-    logs_base_dir: String,
 }
 
 #[tokio::main]
@@ -29,7 +25,11 @@ async fn main() {
     let args: Args  = Args::parse();
     let port: u16 = args.port;
     let host: Ipv4Addr = args.host.parse().expect("Unable to parse host as IPv4 Address");  
-    let routes = warp::path("watch")    
+    let logs_dir_route = warp::path("logs")
+    .and(warp::fs::dir(
+        format!("{}",Logger::log_dir())
+    ));
+    let ws_route = warp::path("watch")    
     .map(move || args.clone() )
     .and(warp::ws())
     .and(warp::query::<WatchQueryParams>())
@@ -43,9 +43,9 @@ async fn main() {
                 args.stream_key.clone(),
                 q.timeout,
                 q.save_logs,
-                args.logs_base_dir.clone(),
             )
         )
     });
+    let routes = ws_route.or(logs_dir_route);
     warp::serve(routes).run((host.octets(),port)).await;
 }

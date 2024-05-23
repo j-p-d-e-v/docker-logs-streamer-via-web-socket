@@ -3,6 +3,6 @@ services:
     image: node
     tty: true
     volumes:
-      - ./client:/app
+      - ../ui:/app
     ports:
       - 7050:80

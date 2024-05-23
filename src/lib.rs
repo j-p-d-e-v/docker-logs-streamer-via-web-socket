@@ -3,13 +3,14 @@ use futures_core::stream::Stream;
 use warp::filters::ws::{WebSocket, Message};
 use bollard::{ Docker, container::{LogsOptions, LogOutput} };
 use std::{
-    time::Duration,
-    default::Default,
+    default::Default, 
+    time::Duration
 };
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use std::fs;
 use std::io::{BufWriter, Write, Error};
+use std::env::current_dir;
 pub mod tests;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -36,7 +37,7 @@ async fn docker_logs(container_name: String) ->  impl Stream<Item = Result<LogOu
     )
 }
 
-pub async fn send_message(socket: WebSocket, container_name: String, session_id: String, client_stream_key: String, config_stream_key: String, timeout: u64, save_logs: bool, logs_base_dir: String) { 
+pub async fn send_message(socket: WebSocket, container_name: String, session_id: String, client_stream_key: String, config_stream_key: String, timeout: u64, save_logs: bool) { 
     let (mut tx, mut rx) = socket.split();
 
     println!("Websocket Connected");
@@ -49,15 +50,14 @@ pub async fn send_message(socket: WebSocket, container_name: String, session_id:
         }
     }
     else {
-
         let mut logs = docker_logs(container_name.clone()).await;
         let timeout: u64 = if timeout == 0 {
             30
         } else {
             timeout
         };
-        let log_file_path: String = format!("{}/{}.log",logs_base_dir,&session_id);
-        let mut logger: Logger = Logger::new(log_file_path); 
+        let file_name: String = format!("{}.log",&session_id);
+        let mut logger: Logger = Logger::new(&file_name); 
         while let Some(log_result) = logs.next().await { 
             match log_result {
                 Ok(log_output) => { 
@@ -120,8 +120,19 @@ pub struct Logger {
 }
 
 impl Logger {
-    pub fn new(file_path: String) -> Self {
-        let path: &Path = Path::new(&file_path);
+
+    pub fn log_dir() -> String{
+        let cdir: String = current_dir().expect("Unable to get current directory for logs.").to_string_lossy().to_string();
+        let log_file_path: String = format!("{}/logs/",cdir); 
+        if let Err(error) = fs::create_dir_all(&log_file_path) {
+            panic!("Unable to create logs base directory. Error: {:?}",error);
+        }
+        log_file_path
+    }
+
+    pub fn new(file_name: &String) -> Self {        
+        let log_file_path: String = format!("{}/{}",Logger::log_dir(),&file_name);
+        let path: &Path = Path::new(&log_file_path);
         match fs::OpenOptions::new().create(true).append(true).open(path) {
             Ok(file) => {
                 Self {
@@ -129,7 +140,7 @@ impl Logger {
                 }   
             }
             Err(error) => {
-                panic!("Unable to create file handler for {}. Error: {:?}",file_path,error);
+                panic!("Unable to create file handler for {}. Error: {:?}",log_file_path,error);
             }
         }
     }
