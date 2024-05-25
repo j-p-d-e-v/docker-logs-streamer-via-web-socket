@@ -7,7 +7,7 @@ edition = "2021"
 license = "Apache-2.0"
 authors = ["JP Mateo <jpmateo022@gmail.com>"]
 categories = ["asynchronous","network-programming","web-programming","web-programming::websocket","web-programming::http-server"]
-keywords = ["websocket", "personal-project","study-rust","docker","container","logs-streamer"]
+keywords = ["websocket", "personal-project","docker","container","logs-streamer"]
 
 [dependencies]
 bollard = "0.16.1"
