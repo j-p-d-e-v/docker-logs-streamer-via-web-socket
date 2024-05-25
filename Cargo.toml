@@ -1,7 +1,13 @@
 [package]
 name = "docker-container-log-streamer"
+description = "A Rust library for streaming docker logs via websocket."
+repository = "https://github.com/j-p-d-e-v/docker-logs-streamer-via-web-socket"
 version = "0.1.0"
 edition = "2021"
+license = "Apache-2.0"
+authors = ["JP Mateo <jpmateo022@gmail.com>"]
+categories = ["asynchronous","network-programming","web-programming","web-programming::websocket","web-programming::http-server"]
+keywords = ["websocket", "personal-project","study-rust","docker","container","logs-streamer"]
 
 [dependencies]
 bollard = "0.16.1"
