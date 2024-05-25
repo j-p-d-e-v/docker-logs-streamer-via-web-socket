@@ -40,6 +40,16 @@
                 </div>
                 <div class="form-input">
                   <v-text-field
+                    type="number"
+                    hint="Show logs since N number of minutes. Example: 30 minutes ago."
+                    label="Since (In Minutes)"
+                    min="0"
+                    v-model="since_in_minutes"
+                    variant="outlined"
+                  ></v-text-field>
+                </div>
+                <div class="form-input">
+                  <v-text-field
                     hint="The authentication key in order to listen to the container logs."
                     label="Stream Key"
                     v-model="stream_key"
@@ -129,7 +139,8 @@ export default{
         "session_id="+this.session_id,
         "timeout="+this.timeout,
         "stream_key="+this.stream_key,
-        "save_logs="+this.save_logs
+        "save_logs="+this.save_logs,
+        "since_in_minutes="+this.since_in_minutes,
       ].join("&");
       this.can_download = false;
       let url = `${base_url}?${params}`;
@@ -171,6 +182,7 @@ export default{
       container_name: "random_messages",
       session_id: "session-1576052f73f8",
       save_logs: false,
+      since_in_minutes:0,
       timeout:30,
       stream_key: "thisisastreamkeyfortesting",
       data:[],

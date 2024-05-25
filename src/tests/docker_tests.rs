@@ -1,5 +1,12 @@
 
 #[tokio::test]
+async fn test_docker_since(){
+    use crate::docker_since;
+    assert_eq!(docker_since(0),0);
+    assert!(docker_since(30)>0);
+}
+
+#[tokio::test]
 async fn test_docker_logs(){
     use crate::docker_logs;
     use crate::Logger;
@@ -14,7 +21,7 @@ async fn test_docker_logs(){
             LogOutput
         },
     };
-    let mut logger: Logger = Logger::new("test-docker-logs.log".to_string());
+    let mut logger: Logger = Logger::new(&"test-docker-logs.log".to_string());
     let docker = Docker::connect_with_local_defaults().unwrap();
     match docker.create_container(Some(CreateContainerOptions{
         name:"test-random-messages".to_string(),
@@ -24,7 +31,7 @@ async fn test_docker_logs(){
         tty: Some(false),
         env: Some(vec![            
             "SLEEP_TIME=0.01".to_string(),
-            "LOOP_LIMIT=9999".to_string(),
+            "LOOP_LIMIT=5".to_string(),
         ]),
         image: Some("random_messages:latest".to_string()),
         ..Default::default()
@@ -35,7 +42,7 @@ async fn test_docker_logs(){
                 Ok(_) => {
                     let container_id: String = result.id.clone();
                     println!("Container ID: {}",container_id);
-                    let mut logs = docker_logs(container_id.clone()).await;
+                    let mut logs = docker_logs(container_id.clone(),30).await;
                     
                     while let Some(log_result) = logs.next().await {
                         match log_result {

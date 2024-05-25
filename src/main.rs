@@ -38,6 +38,7 @@ async fn main() {
             send_message(
                 socket,
                 q.container_name.clone(),
+                q.since_in_minutes.clone(),
                 q.session_id.clone(),
                 q.stream_key.clone(),
                 args.stream_key.clone(),
